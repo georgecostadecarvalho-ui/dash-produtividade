@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Produtividade &amp; Utilização | Kuehne+Nagel</title>
+<meta name="description" content="Acompanhamento de produtividade e utilização da operação — Kuehne+Nagel.">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#00337F">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2300337F'/%3E%3Ctext x='32' y='42' font-family='Segoe UI,Arial' font-size='26' font-weight='700' fill='%23fff' text-anchor='middle'%3EK%2BN%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  /* Paleta Kuehne+Nagel */
+  --kn-navy:#00337F;      /* azul institucional */
+  --kn-deep:#001B45;      /* azul profundo */
+  --kn-blue:#0091DA;      /* azul claro / destaque */
+  --kn-sky:#5FC3F0;
+  --kn-ice:#B9E2F7;
+
+  --bg:#071023; --panel:#0E1B33; --panel2:#142445; --line:#1E3563;
+  --txt:#E6EEF9; --muted:#8FA6C8;
+  --green:#2FB37A; --amber:#E8A33D; --red:#E0526A;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px}
+header{background:linear-gradient(90deg,var(--kn-navy) 0%,#00256A 45%,var(--panel) 100%);padding:16px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-bottom:3px solid var(--kn-blue)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo .mark{width:38px;height:38px;border-radius:8px;background:#fff;color:var(--kn-navy);display:grid;place-items:center;font-weight:800;font-size:17px;letter-spacing:-1px}
+header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.3px}
+header .sub{color:var(--kn-ice);font-size:12px}
+header .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+button{background:var(--kn-blue);color:#fff;border:0;border-radius:6px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:13px}
+button:hover{filter:brightness(1.12)}
+button.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45)}
+.wrap{padding:18px 22px 40px}
+.filters{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.f{display:flex;flex-direction:column;gap:6px}
+.f label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600}
+select,input[type=text]{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:13px;min-width:170px}
+select[multiple]{min-height:92px}
+option:checked{background:var(--kn-blue);color:#fff}
+input[type=range]{width:180px;accent-color:var(--kn-blue)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--kn-blue);border-radius:10px;padding:13px 15px}
+.kpi .lb{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600}
+.kpi .vl{font-size:25px;font-weight:700;margin-top:5px;line-height:1.1}
+.kpi .hint{font-size:11px;color:var(--muted);margin-top:3px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}
+@media(max-width:920px){.g2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#fff;display:flex;align-items:center;gap:8px}
+.card h2 .dot{width:9px;height:9px;border-radius:50%}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:600;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--panel);z-index:1}
+th:hover{color:var(--kn-sky)}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:rgba(0,145,218,.13)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+th.num{text-align:right}
+.rank{color:var(--muted);width:26px}
+.name{max-width:230px;overflow:hidden;text-overflow:ellipsis}
+.name b{border-bottom:1px dotted var(--kn-sky)}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.p-good{background:rgba(47,179,122,.18);color:#54d39c}
+.p-mid{background:rgba(232,163,61,.18);color:#f0b45f}
+.p-bad{background:rgba(224,82,106,.2);color:#ff8397}
+.bar{height:6px;border-radius:3px;background:rgba(255,255,255,.09);position:relative;min-width:60px;display:block}
+.bar>i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;display:block}
+.tblwrap{max-height:520px;overflow:auto}
+.status{font-size:12px;color:var(--kn-ice)}
+.err{background:rgba(224,82,106,.15);border:1px solid var(--red);color:#ffc0c9;padding:12px 14px;border-radius:8px;margin-bottom:16px}
+.chartbox{position:relative;height:300px}
+.tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:11px;color:var(--muted)}
+.hintbar{color:var(--muted);font-size:12px;margin:-6px 0 14px}
+footer{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;line-height:1.7}
+footer b{color:var(--kn-sky)}
+@media print{.filters,.hintbar,header .right,.nav{display:none}body{background:#fff;color:#000}}
+
+/* ===== Modal de detalhe ===== */
+.overlay{position:fixed;inset:0;background:rgba(2,8,20,.72);backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:28px 16px;overflow:auto}
+.overlay.on{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:min(1020px,100%);box-shadow:0 24px 70px rgba(0,0,0,.6);overflow:hidden}
+.mhead{background:linear-gradient(90deg,var(--kn-navy),#00256A);padding:16px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:3px solid var(--kn-blue)}
+.avatar{width:46px;height:46px;border-radius:50%;background:var(--kn-blue);display:grid;place-items:center;font-weight:800;font-size:16px;color:#fff}
+.mhead h3{margin:0;font-size:18px}
+.mhead .meta{color:var(--kn-ice);font-size:12px;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+.mhead .meta span{background:rgba(255,255,255,.12);padding:2px 8px;border-radius:20px}
+.mhead .close{margin-left:auto;background:rgba(255,255,255,.15);border:0;color:#fff;font-size:20px;line-height:1;padding:6px 12px;border-radius:8px}
+.mbody{padding:18px 20px 22px;display:grid;gap:16px}
+.mkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.mkpi{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--kn-blue);border-radius:9px;padding:10px 12px}
+.mkpi .lb{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600}
+.mkpi .vl{font-size:21px;font-weight:700;margin-top:3px}
+.mkpi .hint{font-size:11px;color:var(--muted);margin-top:2px}
+.msec{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.msec h4{margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--kn-sky)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.mgrid{grid-template-columns:1fr}}
+.cmp{display:grid;grid-template-columns:120px 1fr 92px;gap:10px;align-items:center;margin-bottom:9px;font-size:12px}
+.cmp .lb2{color:var(--muted)}
+.cmp .vl2{text-align:right;font-variant-numeric:tabular-nums}
+.cmp .track{height:9px;border-radius:5px;background:rgba(255,255,255,.08);position:relative}
+.cmp .track>i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.delta{font-size:11px;font-weight:700;padding:1px 6px;border-radius:12px;margin-left:6px}
+.up{background:rgba(47,179,122,.2);color:#54d39c}
+.down{background:rgba(224,82,106,.2);color:#ff8397}
+.posbox{display:flex;gap:10px;flex-wrap:wrap}
+.pos{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+.pos .big{font-size:22px;font-weight:800;color:var(--kn-sky)}
+.pos .lb{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600}
+.pos .hint{font-size:11px;color:var(--muted)}
+.nav{display:flex;gap:8px;align-items:center}
+.nav button{padding:6px 11px;font-size:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="mark">K+N</div>
+    <div>
+      <h1>Produtividade &amp; Utilização — Operação</h1>
+      <div class="sub">Fonte: Google Sheets · aba <b>import</b> · atualização ao vivo</div>
+    </div>
+  </div>
+  <div class="right">
+    <span class="status" id="status">Carregando…</span>
+    <select id="fAuto" title="Atualização automática" onchange="setAuto(this.value)"
+            style="min-width:0;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#fff">
+      <option value="0">Auto: off</option><option value="5">Auto: 5 min</option>
+      <option value="10" selected>Auto: 10 min</option><option value="30">Auto: 30 min</option>
+    </select>
+    <button onclick="loadData()">↻ Atualizar</button>
+    <button class="ghost" onclick="window.open(SHEET_URL,'_blank')">Abrir planilha</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="errbox"></div>
+
+  <div class="filters">
+    <div class="f"><label>Gestor</label><select id="fGestor" multiple size="5"></select></div>
+    <div class="f"><label>Área</label><select id="fArea" multiple size="5"></select></div>
+    <div class="f"><label>Horário / Turno</label><select id="fHorario" multiple size="5"></select></div>
+    <div class="f"><label>Status atual</label><select id="fStatus" multiple size="5"></select></div>
+    <div class="f"><label>Buscar representante</label><input type="text" id="fBusca" placeholder="nome ou ID…"></div>
+    <div class="f"><label>Tempo efetivo mín. p/ ranking: <b id="minLbl">30 min</b></label><input type="range" id="fMin" min="0" max="120" step="5" value="30"></div>
+    <div class="f"><button class="ghost" onclick="resetFilters()">Limpar filtros</button></div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+  <div class="hintbar">💡 Clique em qualquer colaborador para abrir o painel individual de produtividade. Nas tabelas de resumo, clique num gestor ou área para filtrar a dash.</div>
+
+  <div class="grid g2">
+    <div class="card"><h2><span class="dot" style="background:var(--kn-sky)"></span>Top 10 — Unidades</h2><table id="tTopUn"></table></div>
+    <div class="card"><h2><span class="dot" style="background:var(--red)"></span>Bottom 10 — Unidades</h2><table id="tBotUn"></table></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h2><span class="dot" style="background:var(--kn-sky)"></span>Top 10 — Utilização</h2><table id="tTopUt"></table></div>
+    <div class="card"><h2><span class="dot" style="background:var(--red)"></span>Bottom 10 — Utilização</h2><table id="tBotUt"></table></div>
+  </div>
+
+  <div class="card"><h2><span class="dot" style="background:var(--kn-blue)"></span>Resumo por Gestor</h2><div class="tblwrap"><table id="tGestor"></table></div></div>
+  <div class="card"><h2><span class="dot" style="background:var(--kn-blue)"></span>Resumo por Área</h2><div class="tblwrap"><table id="tArea"></table></div></div>
+  <div class="card"><h2><span class="dot" style="background:#fff"></span>Base analítica <span class="tag" id="baseCount"></span></h2><div class="tblwrap"><table id="tBase"></table></div></div>
+
+  <footer>
+    <div><b>Kuehne+Nagel</b> — Dashboard de Produtividade &amp; Utilização · dados lidos ao vivo da aba <b>import</b> da planilha operacional.</div>
+    <div>Utilização = tempo efetivo ÷ tempo em processo sistêmico · Rankings consideram apenas quem atinge o tempo efetivo mínimo selecionado no filtro.</div>
+    <div id="footStamp"></div>
+  </footer>
+</div>
+
+<!-- ===== Modal individual ===== -->
+<div class="overlay" id="ov" onclick="if(event.target===this)closeDetail()">
+  <div class="modal">
+    <div class="mhead">
+      <div class="avatar" id="dAvatar">–</div>
+      <div>
+        <h3 id="dNome">—</h3>
+        <div class="meta" id="dMeta"></div>
+      </div>
+      <div class="nav" style="margin-left:auto">
+        <button class="ghost" onclick="stepDetail(-1)" title="Anterior">‹</button>
+        <button class="ghost" onclick="stepDetail(1)" title="Próximo">›</button>
+        <button class="close" onclick="closeDetail()">×</button>
+      </div>
+    </div>
+    <div class="mbody">
+      <div class="mkpis" id="dKpis"></div>
+      <div class="msec"><h4>Posição nos rankings (base filtrada)</h4><div class="posbox" id="dPos"></div></div>
+      <div class="mgrid">
+        <div class="msec"><h4>Comparativo com pares</h4><div id="dCmp"></div></div>
+        <div class="msec"><h4>Composição do tempo</h4><div class="chartbox" style="height:230px"><canvas id="dDonut"></canvas></div></div>
+      </div>
+      <div class="msec"><h4 id="dTeamTitle">Unidades — equipe do gestor</h4><div class="chartbox" style="height:290px"><canvas id="dTeam"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ CONFIG ============ */
+const SHEET_ID  = '1E2fV1QloTObo8LBbPXrkWv4wc5SQAUM9heW9I2xL_mY';
+const SHEET_TAB = 'import';
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/edit#gid=0';
+const KN = {navy:'#00337F', blue:'#0091DA', sky:'#5FC3F0', ice:'#B9E2F7', deep:'#001B45'};
+
+/* ============ ESTADO ============ */
+let RAW=[], CHARTS={}, sortState={}, DETAIL_LIST=[], DETAIL_IDX=-1;
+
+/* ============ UTIL ============ */
+const $ = id => document.getElementById(id);
+const nf = n => (n==null||isNaN(n)) ? '—' : Math.round(n).toLocaleString('pt-BR');
+const pf = n => (n==null||isNaN(n)) ? '—' : n.toFixed(1).replace('.',',')+'%';
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// string segura dentro de onclick="fn('...')"
+const jsq = s => esc(String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+function hmsToMin(s){
+  if(s==null) return 0;
+  if(Array.isArray(s)) return (+s[0]||0)*60 + (+s[1]||0) + (+s[2]||0)/60;
+  if(typeof s === 'number') return s*24*60;
+  const str=String(s);
+  let m=str.match(/(\d+):(\d+):(\d+)/); if(m) return (+m[1])*60+(+m[2])+(+m[3])/60;
+  m=str.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)/); if(m) return (+m[4])*60+(+m[5])+(+m[6])/60;
+  const n=parseFloat(str.replace(',','.')); return isNaN(n)?0:n*24*60;
+}
+function minToHms(mins){
+  if(!isFinite(mins)) return '—';
+  const t=Math.round(mins*60),h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=t%60;
+  return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':');
+}
+const avg = arr => { const v=arr.filter(x=>x!=null&&!isNaN(x)); return v.length? v.reduce((a,b)=>a+b,0)/v.length : null; };
+function utilClass(u){ return u>=85?'p-good':u>=70?'p-mid':'p-bad'; }
+function utilColor(u){ return u>=85?'#2FB37A':u>=70?'#E8A33D':'#E0526A'; }
+const initials = n => n.split(/\s+/).filter(w=>w.length>2).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+
+/* ============ CARGA (gviz JSONP) ============ */
+function loadData(){
+  $('status').textContent='Carregando…'; $('errbox').innerHTML='';
+  const cb='gvizCb_'+Date.now();
+  window[cb]=res=>{ try{parseGviz(res);}catch(e){showErr(e.message);} delete window[cb]; };
+  const s=document.createElement('script');
+  s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?sheet='+encodeURIComponent(SHEET_TAB)
+      + '&headers=1&tqx=responseHandler:'+cb+'&_='+Date.now();
+  s.onerror=()=>showErr('Não foi possível acessar a planilha. Verifique se está compartilhada como "qualquer pessoa com o link pode ver".');
+  document.body.appendChild(s); setTimeout(()=>s.remove(),30000);
+}
+function showErr(msg){ $('status').textContent='Erro';
+  $('errbox').innerHTML='<div class="err"><b>Falha ao carregar dados.</b><br>'+esc(msg)+'</div>'; }
+
+function parseGviz(res){
+  if(res.status==='error'){ showErr(res.errors.map(e=>e.detailed_message||e.message).join(' | ')); return; }
+  const cols=res.table.cols.map(c=>(c.label||c.id||'').trim());
+  const idx=n=>cols.findIndex(c=>c.toLowerCase().startsWith(n.toLowerCase()));
+  const I={estado:idx('Estado actual'),processo:idx('Processo de estado'),statusEv:idx('StatusLastEven'),
+    id:idx('ID'),nome:idx('Representantes'),prodSist:idx('Prod. liquida'),prodEfet:idx('Prod. Efetiva'),
+    util:idx('Utiliza'),tSist:idx('Tempo em processo'),tEfet:idx('Tempo efetivo'),unid:idx('Unidades'),
+    gestor:idx('Gestor'),area:idx('Area')>=0?idx('Area'):idx('Área'),
+    horario:idx('Horario')>=0?idx('Horario'):idx('Horário')};
+  const cell=(r,i)=>(i<0||!r.c||!r.c[i])?null:r.c[i];
+  const val=(r,i)=>{const c=cell(r,i);return c?(c.v!=null?c.v:c.f):null;};
+  const fmt=(r,i)=>{const c=cell(r,i);return c?(c.f!=null?c.f:(c.v!=null?String(c.v):'')):'';};
+  const txt=(r,i)=>{let v=String(fmt(r,i)??'').trim(); return (v===''||v==='#N/A'||v==='#REF!')?'SEM CADASTRO':v;};
+  const num=(r,i)=>{let v=val(r,i); if(typeof v==='number')return v; if(v==null)return null;
+    v=String(v).replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,''); return v===''?null:parseFloat(v);};
+  const dur=(r,i)=>{const c=cell(r,i); if(!c)return 0;
+    if(c.f&&/\d+:\d+/.test(String(c.f)))return hmsToMin(c.f); return hmsToMin(c.v);};
+  const pct=(r,i)=>{const c=cell(r,i); if(!c)return null;
+    if(typeof c.v==='number')return c.v<=1.5?c.v*100:c.v;
+    const m=String(c.f||c.v||'').replace(',','.').match(/-?[\d.]+/); return m?parseFloat(m[0]):null;};
+
+  RAW=res.table.rows.map((r,i)=>{
+    const nome=String(fmt(r,I.nome)||'').trim(); if(!nome) return null;
+    return {key:'r'+i, id:fmt(r,I.id), nome,
+      estado:txt(r,I.estado), processo:fmt(r,I.processo)||'—', statusEv:fmt(r,I.statusEv)||'—',
+      prodSist:num(r,I.prodSist), prodEfet:num(r,I.prodEfet), util:pct(r,I.util),
+      tSistMin:dur(r,I.tSist), tEfetMin:dur(r,I.tEfet),
+      tSistTxt:fmt(r,I.tSist)||'—', tEfetTxt:fmt(r,I.tEfet)||'—',
+      unid:num(r,I.unid)??0, gestor:txt(r,I.gestor), area:txt(r,I.area), horario:txt(r,I.horario)};
+  }).filter(Boolean);
+
+  const stamp=new Date().toLocaleString('pt-BR');
+  $('status').textContent=RAW.length+' registros · '+stamp;
+  const fs=$('footStamp'); if(fs) fs.textContent='Última leitura: '+stamp;
+  buildFilters(); render();
+}
+
+/* ============ FILTROS ============ */
+function fillSelect(el,values,keep){ const sel=new Set(keep||[]);
+  el.innerHTML=values.map(v=>`<option value="${esc(v)}" ${sel.has(v)?'selected':''}>${esc(v)}</option>`).join(''); }
+function buildFilters(){
+  const uniq=k=>[...new Set(RAW.map(r=>r[k]))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  fillSelect($('fGestor'),uniq('gestor'),getSel('fGestor'));
+  fillSelect($('fArea'),uniq('area'),getSel('fArea'));
+  fillSelect($('fHorario'),uniq('horario'),getSel('fHorario'));
+  fillSelect($('fStatus'),uniq('estado'),getSel('fStatus'));
+}
+const getSel=id=>[...$(id).selectedOptions].map(o=>o.value);
+function resetFilters(){
+  ['fGestor','fArea','fHorario','fStatus'].forEach(id=>[...$(id).options].forEach(o=>o.selected=false));
+  $('fBusca').value=''; $('fMin').value=30; render();
+}
+function toggleFilter(id,value){
+  const opts=[...$(id).options], o=opts.find(x=>x.value===value);
+  if(!o) return; const wasOnly=o.selected&&opts.filter(x=>x.selected).length===1;
+  opts.forEach(x=>x.selected=false); if(!wasOnly) o.selected=true; render();
+}
+function filtered(){
+  const g=getSel('fGestor'),a=getSel('fArea'),h=getSel('fHorario'),s=getSel('fStatus');
+  const q=$('fBusca').value.trim().toLowerCase();
+  return RAW.filter(r=>(!g.length||g.includes(r.gestor))&&(!a.length||a.includes(r.area))&&
+    (!h.length||h.includes(r.horario))&&(!s.length||s.includes(r.estado))&&
+    (!q||r.nome.toLowerCase().includes(q)||String(r.id).includes(q)));
+}
+
+/* ============ RENDER ============ */
+function render(){
+  if(!RAW.length) return;
+  const data=filtered(), minMin=+$('fMin').value;
+  $('minLbl').textContent=minMin+' min';
+  const rank=data.filter(r=>r.tEfetMin>=minMin);
+  renderKpis(data,rank,minMin);
+  rankTable('tTopUn',[...rank].sort((a,b)=>b.unid-a.unid).slice(0,10),'unid');
+  rankTable('tBotUn',[...rank].sort((a,b)=>a.unid-b.unid).slice(0,10),'unid');
+  rankTable('tTopUt',[...rank].sort((a,b)=>(b.util??-1)-(a.util??-1)).slice(0,10),'util');
+  rankTable('tBotUt',[...rank].sort((a,b)=>(a.util??999)-(b.util??999)).slice(0,10),'util');
+  const byG=groupBy(data,'gestor'), byA=groupBy(data,'area');
+  groupTable('tGestor',byG,'Gestor','fGestor');
+  groupTable('tArea',byA,'Área','fArea');
+  baseTable(data);
+  if(DETAIL_IDX>=0 && $('ov').classList.contains('on')) openDetail(DETAIL_LIST[DETAIL_IDX]?.key, DETAIL_LIST);
+}
+
+function renderKpis(data,rank,minMin){
+  const un=data.reduce((s,r)=>s+(r.unid||0),0);
+  const tEf=data.reduce((s,r)=>s+r.tEfetMin,0), tSis=data.reduce((s,r)=>s+r.tSistMin,0);
+  const utilPond=tSis>0?tEf/tSis*100:null, utilSimp=avg(data.map(r=>r.util));
+  const ativos=data.filter(r=>r.statusEv==='in_activity').length;
+  const abaixo70=data.filter(r=>r.util!=null&&r.util<70).length;
+  const k=[
+    ['Representantes',nf(data.length),ativos+' em atividade'],
+    ['Unidades totais',nf(un),'média '+nf(un/(data.length||1))+' /pessoa'],
+    ['Utilização média',pf(utilSimp),'ponderada: '+pf(utilPond)],
+    ['Tempo efetivo',minToHms(tEf),'sistêmico: '+minToHms(tSis)],
+    ['Prod. efetiva média',nf(avg(data.map(r=>r.prodEfet))||0),'un/h equivalente'],
+    ['Abaixo de 70% util.',nf(abaixo70),((abaixo70/(data.length||1))*100).toFixed(0)+'% da base'],
+    ['Elegíveis ao ranking',nf(rank.length),'≥ '+minMin+' min efetivos']
+  ];
+  $('kpis').innerHTML=k.map(([l,v,h])=>`<div class="kpi"><div class="lb">${l}</div><div class="vl">${v}</div><div class="hint">${h}</div></div>`).join('');
+}
+
+function rankTable(id,rows,metric){
+  const max=Math.max(...rows.map(r=>metric==='unid'?r.unid:(r.util||0)),1);
+  const isUtil = metric==='util';
+  window['LIST_'+id]=rows;
+  const ncols = isUtil?6:5;
+  $(id).innerHTML=`<thead><tr><th class="rank">#</th><th>Representante</th><th>Gestor</th><th>Área</th>
+      <th class="num">Unidades</th>${isUtil?'<th class="num">Utilização</th>':''}</tr></thead><tbody>`
+    +(rows.length?rows.map((r,i)=>{
+      const v=metric==='unid'?r.unid:(r.util||0), w=Math.max(3,(v/max)*100);
+      const col=metric==='unid'?KN.blue:utilColor(r.util||0);
+      return `<tr onclick="openDetail('${r.key}',window['LIST_${id}'])" title="Ver detalhe de ${esc(r.nome)}">
+        <td class="rank">${i+1}</td>
+        <td class="name"><b>${esc(r.nome)}</b><span class="bar" style="margin-top:4px"><i style="width:${w}%;background:${col}"></i></span></td>
+        <td>${esc(r.gestor)}</td><td>${esc(r.area)}</td>
+        <td class="num"><b>${nf(r.unid)}</b></td>
+        ${isUtil?`<td class="num"><span class="pill ${utilClass(r.util||0)}">${pf(r.util)}</span></td>`:''}</tr>`;}).join('')
+      :`<tr><td colspan="${ncols}" style="color:var(--muted)">Nenhum registro atende aos filtros.</td></tr>`)+'</tbody>';
+}
+
+function groupBy(data,key){
+  const m={}; data.forEach(r=>{(m[r[key]]=m[r[key]]||[]).push(r);});
+  return Object.entries(m).map(([k,rows])=>{
+    const tEf=rows.reduce((s,r)=>s+r.tEfetMin,0), tSis=rows.reduce((s,r)=>s+r.tSistMin,0);
+    return {k,n:rows.length,unid:rows.reduce((s,r)=>s+(r.unid||0),0),
+      util:avg(rows.map(r=>r.util))||0, utilPond:tSis>0?tEf/tSis*100:0,
+      prodEfet:avg(rows.map(r=>r.prodEfet))||0, tEf, tSis,
+      baixos:rows.filter(r=>r.util!=null&&r.util<70).length};
+  }).sort((a,b)=>b.unid-a.unid);
+}
+
+function groupTable(id,rows,label,filterId){
+  const tot=rows.reduce((s,r)=>s+r.unid,0);
+  $(id).innerHTML=`<thead><tr><th>${label}</th><th class="num">Pessoas</th><th class="num">Unidades</th><th class="num">% do total</th>
+      <th class="num">Unid./pessoa</th><th class="num">Util. média</th><th class="num">Util. ponderada</th>
+      <th class="num">Prod. efetiva</th><th class="num">T. efetivo</th><th class="num">&lt;70%</th></tr></thead><tbody>`
+    +rows.map(r=>`<tr onclick="toggleFilter('${filterId}','${jsq(r.k)}')" title="Clique para filtrar por ${esc(r.k)}">
+        <td><b>${esc(r.k)}</b></td><td class="num">${nf(r.n)}</td><td class="num"><b>${nf(r.unid)}</b></td>
+        <td class="num">${tot?(r.unid/tot*100).toFixed(1).replace('.',',')+'%':'—'}</td>
+        <td class="num">${nf(r.unid/r.n)}</td>
+        <td class="num"><span class="pill ${utilClass(r.util)}">${pf(r.util)}</span></td>
+        <td class="num">${pf(r.utilPond)}</td><td class="num">${nf(r.prodEfet)}</td>
+        <td class="num">${minToHms(r.tEf)}</td><td class="num">${r.baixos}</td></tr>`).join('')
+    +`</tbody><tfoot><tr style="border-top:2px solid var(--line)"><td><b>TOTAL</b></td>
+        <td class="num"><b>${nf(rows.reduce((s,r)=>s+r.n,0))}</b></td><td class="num"><b>${nf(tot)}</b></td>
+        <td class="num">100%</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
+        <td class="num">${minToHms(rows.reduce((s,r)=>s+r.tEf,0))}</td>
+        <td class="num">${rows.reduce((s,r)=>s+r.baixos,0)}</td></tr></tfoot>`;
+}
+
+const BASE_COLS=[['nome','Representante',0],['id','ID',0],['gestor','Gestor',0],['area','Área',0],['horario','Turno',0],
+  ['estado','Estado',0],['processo','Processo',0],['unid','Unidades',1],['util','Utilização',1],
+  ['prodEfet','Prod. efetiva',1],['prodSist','Prod. sist.',1],['tEfetMin','T. efetivo',1],['tSistMin','T. sistêmico',1]];
+function baseTable(data){
+  const st=sortState.base||{k:'unid',dir:-1};
+  const rows=[...data].sort((a,b)=>{const A=a[st.k],B=b[st.k];
+    if(typeof A==='string')return st.dir*A.localeCompare(B,'pt-BR'); return st.dir*(((A??-1))-((B??-1)));});
+  window.LIST_base=rows;
+  $('baseCount').textContent=rows.length+' linhas · clique para detalhar';
+  $('tBase').innerHTML='<thead><tr>'+BASE_COLS.map(([k,l,n])=>`<th class="${n?'num':''}" onclick="sortBase('${k}')">${l}${st.k===k?(st.dir<0?' ▼':' ▲'):''}</th>`).join('')+'</tr></thead><tbody>'
+    +rows.map(r=>`<tr onclick="openDetail('${r.key}',window.LIST_base)">
+        <td class="name"><b>${esc(r.nome)}</b></td><td>${esc(r.id)}</td><td>${esc(r.gestor)}</td><td>${esc(r.area)}</td><td>${esc(r.horario)}</td>
+        <td>${esc(r.estado)}</td><td>${esc(r.processo)}</td><td class="num"><b>${nf(r.unid)}</b></td>
+        <td class="num"><span class="pill ${utilClass(r.util||0)}">${pf(r.util)}</span></td>
+        <td class="num">${nf(r.prodEfet)}</td><td class="num">${nf(r.prodSist)}</td>
+        <td class="num">${esc(r.tEfetTxt)}</td><td class="num">${esc(r.tSistTxt)}</td></tr>`).join('')+'</tbody>';
+}
+function sortBase(k){ const st=sortState.base||{k:'unid',dir:-1};
+  sortState.base=(st.k===k)?{k,dir:-st.dir}:{k,dir:(typeof RAW[0][k]==='string')?1:-1}; baseTable(filtered()); }
+
+/* ============ DETALHE INDIVIDUAL ============ */
+function openDetail(key,list){
+  const r=RAW.find(x=>x.key===key); if(!r) return;
+  DETAIL_LIST=(list&&list.length?list:filtered()); DETAIL_IDX=DETAIL_LIST.findIndex(x=>x.key===key);
+  const base=filtered();
+  const pares=base.filter(x=>x.gestor===r.gestor), paresA=base.filter(x=>x.area===r.area);
+  const mG={un:avg(pares.map(x=>x.unid)),ut:avg(pares.map(x=>x.util)),pe:avg(pares.map(x=>x.prodEfet))};
+  const mA={un:avg(paresA.map(x=>x.unid)),ut:avg(paresA.map(x=>x.util)),pe:avg(paresA.map(x=>x.prodEfet))};
+  const mT={un:avg(base.map(x=>x.unid)),ut:avg(base.map(x=>x.util)),pe:avg(base.map(x=>x.prodEfet))};
+
+  $('dAvatar').textContent=initials(r.nome)||'–';
+  $('dNome').textContent=r.nome;
+  $('dMeta').innerHTML=[`ID ${esc(r.id)}`,esc(r.gestor),esc(r.area),esc(r.horario),esc(r.estado),esc(r.processo)]
+    .map(x=>`<span>${x}</span>`).join('');
+
+  const ocioso=Math.max(0,r.tSistMin-r.tEfetMin);
+  $('dKpis').innerHTML=[
+    ['Unidades',nf(r.unid),'processadas'],
+    ['Utilização',pf(r.util),'meta 85%'],
+    ['Prod. efetiva',nf(r.prodEfet),'sobre tempo efetivo'],
+    ['Prod. líq. sistêmica',nf(r.prodSist),'sobre tempo total'],
+    ['Tempo efetivo',r.tEfetTxt,minToHms(r.tEfetMin)],
+    ['Tempo sistêmico',r.tSistTxt,'total logado'],
+    ['Tempo ocioso',minToHms(ocioso),(r.tSistMin?((ocioso/r.tSistMin)*100).toFixed(0):'0')+'% do total'],
+    ['Un. por hora efetiva',nf(r.tEfetMin>0?r.unid/(r.tEfetMin/60):0),'ritmo real']
+  ].map(([l,v,h])=>`<div class="mkpi"><div class="lb">${l}</div><div class="vl">${v}</div><div class="hint">${h}</div></div>`).join('');
+
+  const minMin=+$('fMin').value, elig=base.filter(x=>x.tEfetMin>=minMin);
+  const posOf=(arr,cmp)=>{const s=[...arr].sort(cmp);const i=s.findIndex(x=>x.key===r.key);return i<0?null:[i+1,s.length];};
+  const pU=posOf(elig,(a,b)=>b.unid-a.unid), pT=posOf(elig,(a,b)=>(b.util??-1)-(a.util??-1));
+  const pUg=posOf(pares.filter(x=>x.tEfetMin>=minMin),(a,b)=>b.unid-a.unid);
+  const box=(lb,p,hint)=>`<div class="pos"><div class="lb">${lb}</div><div class="big">${p?('#'+p[0]):'—'}</div>
+      <div class="hint">${p?('de '+p[1]+' · '+hint):'abaixo do tempo mínimo'}</div></div>`;
+  $('dPos').innerHTML=box('Unidades (geral)',pU,'top '+(pU?Math.ceil(pU[0]/pU[1]*100):0)+'%')
+    +box('Utilização (geral)',pT,'top '+(pT?Math.ceil(pT[0]/pT[1]*100):0)+'%')
+    +box('Unidades na equipe',pUg,'equipe '+esc(r.gestor));
+
+  // bloco comparativo: 1 métrica do colaborador + N referências (gestor / área / geral)
+  function cmpBlock(titulo, valor, refs, isPct){
+    const fmtv=v=>(v==null||isNaN(v))?'—':(isPct?pf(v):nf(v));
+    const max=Math.max(valor||0,...refs.map(x=>x[1]||0),1)*1.12;
+    let h=`<div class="cmp"><div class="lb2"><b style="color:var(--txt)">${titulo}</b></div>
+      <div class="track"><i style="width:${Math.min(100,(valor||0)/max*100)}%;background:${KN.blue}"></i></div>
+      <div class="vl2"><b>${fmtv(valor)}</b></div></div>`;
+    refs.forEach(([lb,ref])=>{
+      const d=(ref&&ref>0&&valor!=null)?((valor-ref)/ref*100):null;
+      h+=`<div class="cmp"><div class="lb2" style="padding-left:10px;font-size:11px">↳ ${lb}</div>
+        <div class="track"><i style="width:${Math.min(100,(ref||0)/max*100)}%;background:rgba(255,255,255,.26)"></i></div>
+        <div class="vl2">${fmtv(ref)}${d!=null?`<span class="delta ${d>=0?'up':'down'}">${d>=0?'+':''}${d.toFixed(0)}%</span>`:''}</div></div>`;
+    });
+    return h+'<div style="height:10px"></div>';
+  }
+  $('dCmp').innerHTML=
+    cmpBlock('Unidades', r.unid, [['média gestor',mG.un],['média área',mA.un],['média geral',mT.un]], false)+
+    cmpBlock('Utilização', r.util, [['média gestor',mG.ut],['média área',mA.ut],['média geral',mT.ut]], true)+
+    cmpBlock('Prod. efetiva', r.prodEfet, [['média gestor',mG.pe],['média área',mA.pe],['média geral',mT.pe]], false);
+
+  if(CHARTS.dDonut)CHARTS.dDonut.destroy();
+  CHARTS.dDonut=new Chart($('dDonut'),{type:'doughnut',
+    data:{labels:['Tempo efetivo','Tempo ocioso'],datasets:[{data:[+r.tEfetMin.toFixed(1),+ocioso.toFixed(1)],
+      backgroundColor:[KN.blue,'rgba(255,255,255,.16)'],borderColor:'#0E1B33',borderWidth:3}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'bottom',labels:{color:'#8FA6C8',boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>c.label+': '+minToHms(c.parsed)+' ('+(r.tSistMin?(c.parsed/r.tSistMin*100).toFixed(0):0)+'%)'}}}}});
+
+  const team=[...pares].sort((a,b)=>b.unid-a.unid);
+  $('dTeamTitle').textContent='Unidades — equipe de '+r.gestor+' ('+team.length+' pessoas)';
+  if(CHARTS.dTeam)CHARTS.dTeam.destroy();
+  CHARTS.dTeam=new Chart($('dTeam'),{type:'bar',
+    data:{labels:team.map(x=>x.nome.split(' ').slice(0,2).join(' ')),
+      datasets:[{data:team.map(x=>x.unid),borderRadius:4,
+        backgroundColor:team.map(x=>x.key===r.key?KN.sky:'rgba(0,145,218,.42)')}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      onClick:(e,el)=>{ if(el.length) openDetail(team[el[0].index].key,team); },
+      onHover:(e,el)=>{e.native.target.style.cursor=el.length?'pointer':'default';},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:c=>team[c[0].dataIndex].nome,
+        label:c=>nf(c.parsed.y)+' un · '+pf(team[c.dataIndex].util)}}},
+      scales:{x:{ticks:{color:'#8FA6C8',font:{size:9},maxRotation:65},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{color:'#8FA6C8',font:{size:10}},grid:{color:'rgba(255,255,255,.07)'}}}}});
+
+  $('ov').classList.add('on'); document.body.style.overflow='hidden';
+}
+function closeDetail(){ $('ov').classList.remove('on'); document.body.style.overflow=''; DETAIL_IDX=-1; }
+function stepDetail(d){ if(DETAIL_IDX<0||!DETAIL_LIST.length)return;
+  const i=(DETAIL_IDX+d+DETAIL_LIST.length)%DETAIL_LIST.length; openDetail(DETAIL_LIST[i].key,DETAIL_LIST); }
+
+/* ============ AUTO-ATUALIZAÇÃO ============ */
+let AUTO=null;
+function setAuto(min){
+  if(AUTO){clearInterval(AUTO);AUTO=null;}
+  const m=+min; if(m>0) AUTO=setInterval(loadData,m*60000);
+}
+
+/* ============ EVENTOS ============ */
+['fGestor','fArea','fHorario','fStatus'].forEach(id=>$(id).addEventListener('change',render));
+$('fBusca').addEventListener('input',render);
+$('fMin').addEventListener('input',render);
+setAuto($('fAuto').value);
+document.addEventListener('keydown',e=>{
+  if(!$('ov').classList.contains('on'))return;
+  if(e.key==='Escape')closeDetail();
+  if(e.key==='ArrowRight')stepDetail(1);
+  if(e.key==='ArrowLeft')stepDetail(-1);
+});
+loadData();
+</script>
+</body>
+</html>
